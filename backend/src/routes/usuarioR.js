@@ -6,7 +6,7 @@ const usuarioRouter = router.Router();
 
 // Rota pública: login
 usuarioRouter.post('/api/system/login', usuarioController.login);
-
+usuarioRouter.get('/api/system/login', usuarioController.logout);
 // Rotas protegidas: exigem token válido.
 // Cadastro de usuário é feito apenas pelo estabelecimento (usuário adm autenticado),
 // por isso createUsuario também exige token + perfil adm.

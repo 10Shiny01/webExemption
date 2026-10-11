@@ -97,5 +97,8 @@ async function login(req, res) {
         }
     });
 }
-
-export default { getUsuario, getNome, createUsuario, updateUsuario, deleteUsuario, login };
+async function logout(req, res) {
+    jwt.sign({}, process.env.JWT_SECRET, { expiresIn: '1ms' }); 
+    res.json({ mensagem: 'Logout realizado com sucesso' });
+}
+export default { getUsuario, getNome, createUsuario, updateUsuario, deleteUsuario, login, logout };
