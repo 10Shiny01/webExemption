@@ -5,7 +5,7 @@ const Pool = DB;
  
 async function getReceita() {
     const result = await Pool.query(`
-        SELECT r.*, p.nome AS produto_nome
+        SELECT r.*, r.validade, p.nome AS produto_nome
         FROM receita r
         JOIN produto p ON p.produto_id = r.id_produto
     `);
@@ -14,7 +14,7 @@ async function getReceita() {
 
 async function getById(id) {
     const result = await Pool.query(`
-        SELECT r.*, p.nome AS produto_nome
+        SELECT r.*, r.validade, p.nome AS produto_nome
         FROM receita r
         JOIN produto p ON p.produto_id = r.id_produto
         WHERE r.receita_id = $1
@@ -24,7 +24,7 @@ async function getById(id) {
 
 async function getByNome(nome) {
     const result = await Pool.query(`
-        SELECT r.*, p.nome AS produto_nome
+        SELECT r.*, r.validade, p.nome AS produto_nome
         FROM receita r
         JOIN produto p ON p.produto_id = r.id_produto
         WHERE r.nome = $1
@@ -70,10 +70,11 @@ async function usoReceita(receita,id,tokenUsuario) {
        
     
    }
-   const produto_entrada = await Pool.query(
-        `INSERT INTO entrada (id_produto, quantidade, fornecedor,validade) VALUES ($1, $2, $3, $4) RETURNING *`,
-        [ receitaId[0].id_produto, receita.mult*receitaId[0].quantidade, "receita de " + receitaId[0].nome,receitaId[0].validade]
-    );
+ const produto_entrada = await Pool.query(
+    `INSERT INTO entrada (id_produto, quantidade, fornecedor, validade)
+     VALUES ($1, $2, $3, CURRENT_DATE + $4::int) RETURNING *`,
+    [receitaId[0].id_produto, receita.mult * receitaId[0].quantidade, "receita de " + receitaId[0].nome, receitaId[0].validade]
+);
     return produto_entrada.rows[0];
 
 }

@@ -21,6 +21,7 @@ function ReceitaForm({ receita, ingredientesAtuais, produtos, salvando, onSalvar
   const [nome, setNome] = useState(receita?.nome ?? '');
   const [produtoFinal, setProdutoFinal] = useState(receita ? String(receita.id_produto) : '');
   const [quantidade, setQuantidade] = useState(receita ? String(receita.quantidade) : '');
+  const [validade, setValidade] = useState(receita?.validade != null ? String(receita.validade) : '');
   const [linhas, setLinhas] = useState(() =>
     ingredientesAtuais.map((i) =>
       novaLinha({ id_receita_uso: i.id_receita_uso, id_produto: String(i.id_produto), quantidade: String(i.quantidade) })
@@ -45,7 +46,7 @@ function ReceitaForm({ receita, ingredientesAtuais, produtos, salvando, onSalvar
     if (Object.keys(novos).length) return;
 
     onSalvar(
-      { id_produto: Number(produtoFinal), nome: nome.trim(), quantidade: Number(quantidade) },
+      { id_produto: Number(produtoFinal), nome: nome.trim(), quantidade: Number(quantidade),validade: validade },
       linhas
     );
   }
@@ -83,6 +84,14 @@ function ReceitaForm({ receita, ingredientesAtuais, produtos, salvando, onSalvar
               </option>
             ))}
           </FormField>
+          <FormField
+            label="Validade (dias)"
+            type="number"
+            min="0"
+            step="1"
+            value={validade}
+            onChange={(e) => setValidade(e.target.value)}
+          />
           <FormField
             label="Quantidade produzida"
             type="number"
@@ -291,9 +300,12 @@ export default function Receitas() {
             <article className="receita" key={r.receita_id}>
               <h2>{r.nome}</h2>
               <p className="texto-suave">
-                Rende {formatarNumero(r.quantidade)} {unidade(r.id_produto)} de {r.produto_nome}
+                Rende {formatarNumero(r.quantidade)} {unidade(r.id_produto)} de {r.produto_nome} 
               </p>
-
+              <p
+              className="texto-suave">
+               {r.validade} dias de validade
+              </p>
               <h3>Ingredientes</h3>
               {itens.length === 0 ? (
                 <p className="texto-suave">Nenhum ingrediente cadastrado.</p>
