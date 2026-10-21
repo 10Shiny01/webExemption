@@ -1,0 +1,50 @@
+:root {
+  /* Cores base do projeto */
+  --cor-vinho: #5a0f24;
+  --cor-creme: #faf7ef;
+
+  /* Variações de vinho (hierarquia e estados) */
+  --vinho-escuro: #430a1a;   /* hover e pressionado */
+  --vinho-medio: #7a2338;    /* detalhes e ícones secundários */
+  --vinho-tenue: #f1e4e6;    /* fundo de destaque suave */
+
+  /* Variações de creme */
+  --creme-medio: #f2ecdd;    /* áreas rebaixadas, cabeçalho de tabela */
+  --creme-borda: #e2d9c2;    /* bordas e divisores */
+
+  /* Texto */
+  --cor-texto: #2b1a1f;
+  --cor-texto-suave: #6b5359;
+  --cor-texto-invertido: #faf7ef;
+
+  /* Estados (sóbrios, para combinar com vinho e creme) */
+  --cor-erro: #a12626;
+  --cor-sucesso: #2e6b3e;
+  --cor-aviso: #8a5a00;
+
+  /* Tipografia */
+  --fonte-titulo: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --fonte-corpo: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --texto-pequeno: 0.875rem;
+  --texto-base: 1rem;
+  --titulo-3: 1.25rem;
+  --titulo-2: 1.625rem;
+  --titulo-1: 2.125rem;
+
+  /* Formas: raio diferente conforme a hierarquia */
+  --raio-controle: 8px;   /* botões e campos */
+  --raio-cartao: 14px;    /* cartões e painéis */
+  --raio-pilula: 999px;   /* selos de status */
+
+  /* Espaçamento */
+  --espaco-1: 0.25rem;
+  --espaco-2: 0.5rem;
+  --espaco-3: 0.75rem;
+  --espaco-4: 1rem;
+  --espaco-5: 1.5rem;
+  --espaco-6: 2rem;
+
+  /* Área mínima de clique */
+  --altura-controle: 2.75rem;
+}

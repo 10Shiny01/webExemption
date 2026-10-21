@@ -1,0 +1,27 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente e credenciais
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Arquivos temporários e de build
+tmp/
+*.tmp
+dist/
+build/
+coverage/
+
+# Editor e sistema operacional
+.vscode/
+.DS_Store
+Thumbs.db

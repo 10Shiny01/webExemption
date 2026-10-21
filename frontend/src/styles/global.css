@@ -1,0 +1,68 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte-corpo);
+  font-size: var(--texto-base);
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background: var(--cor-creme);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0 0 var(--espaco-3);
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--cor-vinho);
+}
+
+h1 { font-size: var(--titulo-1); }
+h2 { font-size: var(--titulo-2); }
+h3 { font-size: var(--titulo-3); }
+
+p {
+  margin: 0 0 var(--espaco-3);
+  max-width: 70ch;
+}
+
+a {
+  color: var(--cor-vinho);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cor-vinho);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

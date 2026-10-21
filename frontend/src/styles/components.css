@@ -1,0 +1,165 @@
+/* ---------- Botão ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+  min-height: var(--altura-controle);
+  padding: 0 var(--espaco-5);
+  border: 1.5px solid transparent;
+  border-radius: var(--raio-controle);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn--primario {
+  background: var(--cor-vinho);
+  color: var(--cor-texto-invertido);
+}
+.btn--primario:hover:not(:disabled) {
+  background: var(--vinho-escuro);
+}
+
+.btn--secundario {
+  background: transparent;
+  border-color: var(--cor-vinho);
+  color: var(--cor-vinho);
+}
+.btn--secundario:hover:not(:disabled) {
+  background: var(--vinho-tenue);
+}
+
+.btn--discreto {
+  background: transparent;
+  color: var(--cor-vinho);
+}
+.btn--discreto:hover:not(:disabled) {
+  background: var(--vinho-tenue);
+}
+
+.btn--perigo {
+  background: var(--cor-erro);
+  color: var(--cor-texto-invertido);
+}
+.btn--perigo:hover:not(:disabled) {
+  background: #7f1d1d;
+}
+
+.btn--bloco {
+  width: 100%;
+}
+
+/* ---------- Spinner ---------- */
+.spinner {
+  animation: girar 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Campo de formulário ---------- */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin-bottom: var(--espaco-4);
+}
+
+.campo__rotulo {
+  font-size: var(--texto-pequeno);
+  font-weight: 600;
+  color: var(--cor-vinho);
+}
+
+.campo__controle {
+  width: 100%;
+  min-height: var(--altura-controle);
+  padding: var(--espaco-2) var(--espaco-3);
+  background: #fff;
+  border: 1.5px solid var(--creme-borda);
+  border-radius: var(--raio-controle);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+textarea.campo__controle {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.campo__controle:hover {
+  border-color: var(--vinho-medio);
+}
+
+.campo__controle:focus {
+  outline: none;
+  border-color: var(--cor-vinho);
+  box-shadow: 0 0 0 3px rgba(90, 15, 36, 0.2);
+}
+
+.campo__controle:disabled {
+  background: var(--creme-medio);
+  color: var(--cor-texto-suave);
+}
+
+.campo--erro .campo__controle {
+  border-color: var(--cor-erro);
+}
+
+.campo__ajuda {
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-suave);
+}
+
+.campo__erro {
+  font-size: var(--texto-pequeno);
+  color: var(--cor-erro);
+  font-weight: 600;
+}
+
+/* ---------- Mensagem de retorno ---------- */
+.feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4);
+  border: 1.5px solid;
+  border-radius: var(--raio-controle);
+  font-size: var(--texto-pequeno);
+  background: #fff;
+}
+
+.feedback__icone {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.feedback__texto {
+  flex: 1;
+}
+
+.feedback__fechar {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: var(--espaco-1);
+  border: 0;
+  border-radius: var(--raio-controle);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.feedback__fechar:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.feedback--sucesso { border-color: var(--cor-sucesso); color: var(--cor-sucesso); }
+.feedback--erro    { border-color: var(--cor-erro);    color: var(--cor-erro); }
+.feedback--aviso   { border-color: var(--cor-aviso);   color: var(--cor-aviso); }
+.feedback--info    { border-color: var(--cor-vinho);   color: var(--cor-vinho); }
