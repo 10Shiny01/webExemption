@@ -34,16 +34,16 @@ async function getByNome(nome) {
 
 async function createReceita(receita) {
     const result = await Pool.query(
-        'INSERT INTO receita (id_produto,nome,quantidade) VALUES ($1,$2,$3) RETURNING *',
-        [receita.id_produto, receita.nome, receita.quantidade]
+        'INSERT INTO receita (id_produto,nome,quantidade,validade) VALUES ($1,$2,$3,$4) RETURNING *',
+        [receita.id_produto, receita.nome, receita.quantidade,receita.validade]
     );
     return result.rows[0];
 }
 
 async function updateReceita(id, receita) {
     const result = await Pool.query(
-        'UPDATE receita SET id_produto=$1, nome=$2, quantidade=$3 WHERE receita_id=$4 RETURNING *',
-        [receita.id_produto, receita.nome, receita.quantidade, id]
+        'UPDATE receita SET id_produto=$1, nome=$2, quantidade=$3, validade=$4 WHERE receita_id=$5 RETURNING *',
+        [receita.id_produto, receita.nome, receita.quantidade,receita.validade, id]
     );
     return result.rows[0];
 }
@@ -71,8 +71,8 @@ async function usoReceita(receita,id,tokenUsuario) {
     
    }
    const produto_entrada = await Pool.query(
-        `INSERT INTO entrada (id_produto, quantidade, fornecedor) VALUES ($1, $2, $3) RETURNING *`,
-        [ receitaId[0].id_produto, receita.mult*receitaId[0].quantidade, "receita de " + receitaId[0].nome]
+        `INSERT INTO entrada (id_produto, quantidade, fornecedor,validade) VALUES ($1, $2, $3, $4) RETURNING *`,
+        [ receitaId[0].id_produto, receita.mult*receitaId[0].quantidade, "receita de " + receitaId[0].nome,receitaId[0].validade]
     );
     return produto_entrada.rows[0];
 
