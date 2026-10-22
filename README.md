@@ -147,8 +147,8 @@ webExemption/
 
 ## Autoria
 
-- Autor: Luiz Arthur
-- Curso: _preencher_
-- Instituição: _preencher_
-- Orientador: _preencher_
-- Ano: _preencher_
+- Autor: Luiz Arthur e Eleazar
+- Curso: Informatica
+- Instituição: Cedup Abílio Paulo
+- Orientador: Jucemar
+- Ano: 2026
