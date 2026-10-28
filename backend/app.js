@@ -24,7 +24,7 @@ try {
 
 const app = express();
 const port = 3000;
-
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONT_URL })); // só o endereço do seu front
 app.use(express.json({ limit: '100kb' }));
