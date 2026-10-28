@@ -19,6 +19,7 @@ export default function Entradas() {
   const [quantidade, setQuantidade] = useState('');
   const [fornecedor, setFornecedor] = useState('');
   const [validade, setValidade] = useState('');
+  const [valor, setValor] = useState('');
   const [erros, setErros] = useState({});
 
   const listaProdutos = Array.isArray(produtos.dados) ? produtos.dados : [];
@@ -45,6 +46,7 @@ export default function Entradas() {
           quantidade: Number(quantidade),
           fornecedor: fornecedor.trim() || null,
           validade: validade || null,
+          valor: valor || null
         }),
       'Entrada registrada.'
     );
@@ -53,6 +55,7 @@ export default function Entradas() {
       setQuantidade('');
       setFornecedor('');
       setValidade('');
+      setValor('');
       entradas.recarregar();
       produtos.recarregar();
     }
@@ -68,6 +71,7 @@ export default function Entradas() {
     },
     { key: 'fornecedor', header: 'Fornecedor', render: (e) => e.fornecedor || '—' },
     { key: 'validade', header: 'Validade', render: (e) => formatarData(e.validade) },
+    { key: 'valor', header:'Valor'}
   ];
 
   return (
@@ -94,6 +98,14 @@ export default function Entradas() {
             onChange={(e) => setQuantidade(e.target.value)}
             error={erros.quantidade}
           />
+        <FormField
+          label="Valor"
+          type="number"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          error={erros.valor}
+        />
+        
           <FormField
             label="Validade"
             type="date"
@@ -101,6 +113,7 @@ export default function Entradas() {
             onChange={(e) => setValidade(e.target.value)}
             hint="Opcional"
           />
+      
         </div>
         <FormField
           label="Fornecedor"
@@ -108,6 +121,7 @@ export default function Entradas() {
           onChange={(e) => setFornecedor(e.target.value)}
           hint="Opcional. A data da entrada é registrada automaticamente."
         />
+        
         <Button type="submit" icon={PackagePlus} loading={executando}>
           Registrar entrada
         </Button>

@@ -15,7 +15,15 @@ function diasAteVencer(validade) {
 
 export function montarResumo(produtos, movimentacao, periodo, validadeDisponivel = true) {
     const movPorId = new Map(
-        movimentacao.map((m) => [m.produto_id, { entradas: Number(m.entradas), saidas: Number(m.saidas) }])
+        movimentacao.map((m) => [
+            m.produto_id,
+            {
+                entradas: Number(m.entradas),
+                saidas: Number(m.saidas),
+                valor_entradas: Number(m.valor_entradas),
+                valor_saidas: Number(m.valor_saidas),
+            },
+        ])
     );
 
     const lista = produtos.map((p) => ({
@@ -25,8 +33,11 @@ export function montarResumo(produtos, movimentacao, periodo, validadeDisponivel
         estoque: Number(p.estoque),
         estoque_minimo: Number(p.estoque_minimo ?? 0),
         dias_para_vencer: diasAteVencer(p.validade),
-        ...(movPorId.get(p.produto_id) ?? { entradas: 0, saidas: 0 }),
+        ...(movPorId.get(p.produto_id) ?? { entradas: 0, saidas: 0, valor_entradas: 0, valor_saidas: 0 }),
     }));
+
+    const gasto = lista.reduce((t, p) => t + p.valor_entradas, 0);
+    const ganho = lista.reduce((t, p) => t + p.valor_saidas, 0);
 
     const slim = (p, extra = {}) => ({ nome: p.nome, unidade: p.unidade, estoque: p.estoque, ...extra });
 
@@ -57,7 +68,14 @@ export function montarResumo(produtos, movimentacao, periodo, validadeDisponivel
         .filter((p) => p.entradas + p.saidas > 0)
         .sort((a, b) => b.entradas + b.saidas - (a.entradas + a.saidas))
         .slice(0, 5)
-        .map((p) => slim(p, { entradas: p.entradas, saidas: p.saidas }));
+        .map((p) =>
+            slim(p, {
+                entradas: p.entradas,
+                saidas: p.saidas,
+                valor_entradas: p.valor_entradas,
+                valor_saidas: p.valor_saidas,
+            })
+        );
 
     const semMovimentacao = lista.filter((p) => p.estoque > 0 && p.entradas + p.saidas === 0);
 
@@ -84,6 +102,7 @@ export function montarResumo(produtos, movimentacao, periodo, validadeDisponivel
         dias_analisados: PERIODOS[periodo],
         validade_disponivel: validadeDisponivel,
         dias_alerta_validade: DIAS_ALERTA_VALIDADE,
+        valores: { gasto_entradas: gasto, ganho_saidas: ganho, saldo: ganho - gasto },
         totais: {
             produtos_cadastrados: lista.length,
             produtos_disponiveis: lista.filter((p) => p.estoque > 0).length,
@@ -183,6 +202,9 @@ export function validarBalanco(conteudo, resumo) {
             .filter((i) => typeof i?.nome === 'string' && nomesValidos.has(i.nome)) // descarta nomes inventados
             .map((i) => ({ nome: i.nome, motivo: String(i.motivo ?? '') }));
     const textos = (v) => arr(v).filter((t) => typeof t === 'string' && t.trim());
+    const valoresPorNome = new Map(
+        resumo.maior_movimentacao.map((p) => [p.nome, { valor_entradas: p.valor_entradas, valor_saidas: p.valor_saidas }])
+    );
 
     return {
         resumo: raw.resumo,
@@ -190,7 +212,7 @@ export function validarBalanco(conteudo, resumo) {
         produtos_reposicao: produtos(raw.produtos_reposicao),
         produtos_criticos: produtos(raw.produtos_criticos),
         produtos_proximos_validade: produtos(raw.produtos_proximos_validade),
-        maior_movimentacao: produtos(raw.maior_movimentacao),
+        maior_movimentacao: produtos(raw.maior_movimentacao).map((i) => ({ ...i, ...(valoresPorNome.get(i.nome) ?? {}) })),
         problemas: textos(raw.problemas),
         recomendacoes: textos(raw.recomendacoes),
         prioridades: textos(raw.prioridades),
@@ -222,16 +244,31 @@ function balancoBasico(r) {
             ...r.vencidos.map(item((p) => `Vencido há ${p.dias_vencido} dia(s).`)),
             ...r.proximos_validade.map(item((p) => `Vence em ${p.dias_para_vencer} dia(s).`)),
         ],
-        maior_movimentacao: r.maior_movimentacao.map(
-            item((p) => `${p.entradas} ${p.unidade} de entrada e ${p.saidas} ${p.unidade} de saída.`)
-        ),
+        maior_movimentacao: r.maior_movimentacao.map((p) => ({
+            nome: p.nome,
+            motivo: `${p.entradas} ${p.unidade} de entrada e ${p.saidas} ${p.unidade} de saída.`,
+            valor_entradas: p.valor_entradas,
+            valor_saidas: p.valor_saidas,
+        })),
         problemas: r.problemas_detectados,
         recomendacoes: [],
         prioridades,
     };
 }
 
-/* ---------- 5. Orquestração ---------- */
+/* ---------- 5. Valores em reais (lista de textos, igual às outras listas) ---------- */
+
+const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+export function textosValores(v) {
+    return [
+        `Gasto com entradas: ${moeda(v.gasto_entradas)}`,
+        `Ganho com saídas: ${moeda(v.ganho_saidas)}`,
+        `Saldo (saídas - entradas): ${moeda(v.saldo)}`,
+    ];
+}
+
+/* ---------- 6. Orquestração ---------- */
 
 export async function gerarBalanco(periodo) {
     const dias = PERIODOS[periodo];
@@ -255,6 +292,7 @@ export async function gerarBalanco(periodo) {
 
     return {
         ...balanco,
+        valores: textosValores(resumo.valores),
         meta: {
             periodo,
             dias_analisados: dias,

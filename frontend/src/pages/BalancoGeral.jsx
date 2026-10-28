@@ -18,6 +18,11 @@ function ListaProdutos({ titulo, itens }) {
           <li key={i.nome}>
             <strong>{i.nome}</strong>
             {i.motivo && <span className="texto-suave"> {i.motivo}</span>}
+             {i.valor_entradas != null && (
+    <span className="texto-suave">
+      {' '}Entradas: {Number(i.valor_entradas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · Saídas: {Number(i.valor_saidas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+    </span>
+  )}
           </li>
         ))}
       </ul>
@@ -111,6 +116,7 @@ export default function BalancoGeral() {
           </div>
           <ListaTextos titulo="Problemas detectados" itens={balanco.problemas} />
           <ListaTextos titulo="Recomendações" itens={balanco.recomendacoes} />
+          <ListaTextos titulo="Valores" itens={balanco.valores} />
         </div>
       )}
     </>

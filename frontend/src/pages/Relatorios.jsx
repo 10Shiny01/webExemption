@@ -30,10 +30,13 @@ export default function Relatorios() {
   const { isAdmin } = useAuth();
   const [periodo, setPeriodo] = useState(periodoInicial);
   const [periodoPdf, setPeriodoPdf] = useState('semanal');
-
+  const [valorE,setValorE] = useState();
+  const [valorS,setValorS] = useState();
+  const [valorTotal,setValorTotal] = useState();
   const produtos = useFetch(() => produtoService.listar(), []);
   const entradas = useFetch(() => entradaService.listar(), []);
   const saidas = useFetch(() => saidaService.listar(), []);
+
   const { executando, executar } = useAcao();
 
   const carregando = (produtos.carregando || entradas.carregando || saidas.carregando) && !entradas.dados;
@@ -47,6 +50,9 @@ export default function Relatorios() {
       return data && data >= inicio && data <= fim;
     };
     const unidades = new Map((Array.isArray(produtos.dados) ? produtos.dados : []).map((p) => [p.produto_id, p.unidade]));
+     const valorEntrada = new Map((Array.isArray(entradas.dados) ? entradas.dados : []).map((e) => [e.entrada_id, e.valor]));
+     const valorSaida = new Map((Array.isArray(saidas.dados) ? saidas.dados : []).map((s) => [s.saida_id, s.valor]));
+
 
     const lista = [
       ...(Array.isArray(entradas.dados) ? entradas.dados : [])
@@ -59,6 +65,7 @@ export default function Relatorios() {
           quantidade: Number(e.quantidade),
           unidade: unidades.get(e.id_produto) ?? '',
           detalhe: e.fornecedor || '—',
+          valorE: Number(e.valor),
         })),
       ...(Array.isArray(saidas.dados) ? saidas.dados : [])
         .filter((s) => dentro(s.data_saida))
@@ -70,6 +77,7 @@ export default function Relatorios() {
           quantidade: Number(s.quantidade),
           unidade: unidades.get(s.id_produto) ?? '',
           detalhe: s.observacao || s.usuario_nome || '—',
+          valorS: Number(s.valor),
         })),
     ];
     return lista.sort((a, b) => paraData(b.data) - paraData(a.data));
@@ -79,11 +87,18 @@ export default function Relatorios() {
     const porProduto = new Map();
     const porDia = new Map();
     movimentos.forEach((m) => {
-      const item = porProduto.get(m.produto) ?? { produto: m.produto, unidade: m.unidade, entradas: 0, saidas: 0 };
-      if (m.tipo === 'entrada') item.entradas += m.quantidade;
-      else item.saidas += m.quantidade;
+      const item = porProduto.get(m.produto) ?? { produto: m.produto, unidade: m.unidade,valorEntrada:m.valorE,valorSaida:m.valorS ,entradas: 0, saidas: 0 ,valorE:0 ,valorS:0 ,valorTotal:0};
+      if (m.tipo === 'entrada'){ 
+        item.entradas += m.quantidade;
+        item.valorE += m.valorE;
+      }
+      else{ 
+        item.saidas += m.quantidade;
+        item.valorS += m.valorS;
+      }
       porProduto.set(m.produto, item);
-
+      item.valorTotal = item.valorS - item.valorE;
+     
       const dia = paraISO(paraData(m.data));
       const registro = porDia.get(dia) ?? { dia, entradas: 0, saidas: 0 };
       registro[m.tipo === 'entrada' ? 'entradas' : 'saidas'] += 1;
@@ -104,6 +119,7 @@ export default function Relatorios() {
     { key: 'produto', header: 'Produto' },
     { key: 'entradas', header: 'Entrou', render: (p) => `${formatarNumero(p.entradas)} ${p.unidade}` },
     { key: 'saidas', header: 'Saiu', render: (p) => `${formatarNumero(p.saidas)} ${p.unidade}` },
+    { key: 'valorTotal', header:'Valor Total',render: (p) =>formatarNumero(p.valorTotal)},
   ];
 
   const colunasHistorico = [
@@ -116,6 +132,8 @@ export default function Relatorios() {
     { key: 'produto', header: 'Produto' },
     { key: 'quantidade', header: 'Quantidade', render: (m) => `${formatarNumero(m.quantidade)} ${m.unidade}` },
     { key: 'detalhe', header: 'Fornecedor / observação' },
+    { key: 'valorS', header:'Valor Saida'},
+    { key: 'valorE', header:'Valor Entrada'},
   ];
 
   return (

@@ -26,7 +26,15 @@ export async function obterRelatorioEstoque(periodo) {
     ]);
 
     const movPorId = new Map(
-        movimentacao.map((m) => [m.produto_id, { entradas: Number(m.entradas), saidas: Number(m.saidas) }])
+        movimentacao.map((m) => [
+            m.produto_id,
+            {
+                entradas: Number(m.entradas),
+                saidas: Number(m.saidas),
+                valor_entradas: Number(m.valor_entradas),
+                valor_saidas: Number(m.valor_saidas),
+            },
+        ])
     );
 
     const itens = produtos.map((p) => {
@@ -40,7 +48,7 @@ export async function obterRelatorioEstoque(periodo) {
             estoque_minimo: estoqueMinimo,
             validade: formatarData(p.validade),
             status: statusDoProduto(estoque, estoqueMinimo),
-            ...(movPorId.get(p.produto_id) ?? { entradas: 0, saidas: 0 }),
+            ...(movPorId.get(p.produto_id) ?? { entradas: 0, saidas: 0, valor_entradas: 0, valor_saidas: 0 }),
         };
     });
 
@@ -50,9 +58,15 @@ export async function obterRelatorioEstoque(periodo) {
         porUnidade[p.unidade] = (porUnidade[p.unidade] ?? 0) + p.estoque;
     });
 
+    const gasto = itens.reduce((t, p) => t + p.valor_entradas, 0);
+    const ganho = itens.reduce((t, p) => t + p.valor_saidas, 0);
+
     return {
         itens,
         totais: {
+            valor_entradas: gasto,
+            valor_saidas: ganho,
+            saldo: ganho - gasto,
             produtos_cadastrados: itens.length,
             com_estoque: itens.filter((p) => p.estoque > 0).length,
             sem_estoque: itens.filter((p) => p.status === 'Sem estoque').length,

@@ -468,10 +468,15 @@
 .toasts > * + * { margin-top: var(--espaco-2); }
 .toasts .feedback { box-shadow: 0 4px 14px rgba(43, 26, 31, 0.18); }
 
+.menu .menu__fechar { display: none; }
+.topo .topo__menu { display: none; }
+
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
-
+  .menu .menu__fechar { display: inline-grid; }
+  .topo .topo__menu { display: inline-grid; }
   .menu {
     position: fixed;
     inset: 0 auto 0 0;

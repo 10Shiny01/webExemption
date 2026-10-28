@@ -5,6 +5,7 @@ const MARGEM = 25;
 /* ---------- utilidades ---------- */
 
 const fmt = (v) => Number(v).toLocaleString('pt-BR');
+const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const dataHora = (iso) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const larguraUtil = (doc) => doc.page.width - MARGEM * 2;
 
@@ -81,9 +82,17 @@ function lista(doc, itens, numerada = false) {
     });
 }
 
-async function tabelaProdutos(doc, titulo, itens) {
+async function tabelaProdutos(doc, titulo, itens, comValores = false) {
     secaoTitulo(doc, titulo);
     if (!itens?.length) return paragrafo(doc, 'Nenhum produto.');
+    if (comValores) {
+        return tabela(
+            doc,
+            ['Produto', 'Motivo', 'Valor entradas', 'Valor saídas'],
+            itens.map((i) => [i.nome, i.motivo || '-', moeda(i.valor_entradas), moeda(i.valor_saidas)]),
+            [140, larguraUtil(doc) - 140 - 170, 85, 85]
+        );
+    }
     await tabela(doc, ['Produto', 'Motivo'], itens.map((i) => [i.nome, i.motivo || '-']), [180, larguraUtil(doc) - 180]);
 }
 
@@ -107,6 +116,9 @@ export async function buildEstoquePDF(dados, dataCallback, endCallback) {
                     .map(([un, v]) => `${fmt(v)} ${un}`)
                     .join(' | ') || '0'
             }`,
+            `Gasto (entradas): ${moeda(totais.valor_entradas)}`,
+            `Ganho (saídas): ${moeda(totais.valor_saidas)}`,
+            `Saldo: ${moeda(totais.saldo)}`,
         ];
 
         const blocoY = doc.y;
@@ -161,9 +173,11 @@ export async function buildEstoquePDF(dados, dataCallback, endCallback) {
         doc.moveDown(0.5);
 
         const comValidade = meta.validade_disponivel;
-        const headers = ['Produto', 'Categoria', 'Estoque', 'Mínimo', 'Entradas', 'Saídas', 'Status'];
+        const headers = ['Produto', 'Categoria', 'Estoque', 'Mínimo', 'Entradas', 'Saídas', 'Valor entradas', 'Valor saídas', 'Status'];
         if (comValidade) headers.push('Validade');
-        const tamanhos = comValidade ? [120, 70, 60, 60, 60, 60, 60, 55] : [140, 80, 65, 65, 65, 65, 65];
+        const tamanhos = comValidade
+            ? [95, 55, 50, 45, 45, 45, 60, 60, 50, 40]
+            : [105, 60, 55, 50, 50, 50, 60, 60, 55];
 
         if (!itens.length) {
             paragrafo(doc, 'Nenhum produto cadastrado.');
@@ -176,6 +190,8 @@ export async function buildEstoquePDF(dados, dataCallback, endCallback) {
                     `${fmt(p.estoque_minimo)} ${p.unidade}`,
                     `${fmt(p.entradas)} ${p.unidade}`,
                     `${fmt(p.saidas)} ${p.unidade}`,
+                    moeda(p.valor_entradas),
+                    moeda(p.valor_saidas),
                     p.status,
                 ];
                 if (comValidade) r.push(p.validade);
@@ -196,14 +212,16 @@ export async function buildEstoquePDF(dados, dataCallback, endCallback) {
         } else {
             await tabela(
                 doc,
-                ['Produto', 'Entradas', 'Saídas', 'Estoque atual'],
+                ['Produto', 'Entradas', 'Saídas', 'Valor entradas', 'Valor saídas', 'Estoque atual'],
                 movimentados.map((p) => [
                     p.nome,
                     `${fmt(p.entradas)} ${p.unidade}`,
                     `${fmt(p.saidas)} ${p.unidade}`,
+                    moeda(p.valor_entradas),
+                    moeda(p.valor_saidas),
                     `${fmt(p.estoque)} ${p.unidade}`,
                 ]),
-                [215, 110, 110, 110]
+                [145, 75, 75, 85, 85, 80]
             );
         }
 
@@ -228,10 +246,13 @@ export async function buildBalancoPDF(balanco, dataCallback, endCallback) {
         secaoTitulo(doc, 'SITUAÇÃO ATUAL');
         paragrafo(doc, balanco.situacao_atual);
 
+        secaoTitulo(doc, 'VALORES DO PERÍODO');
+        lista(doc, balanco.valores);
+
         await tabelaProdutos(doc, 'PRODUTOS QUE PRECISAM DE REPOSIÇÃO', balanco.produtos_reposicao);
         await tabelaProdutos(doc, 'PRODUTOS COM ESTOQUE CRÍTICO', balanco.produtos_criticos);
         await tabelaProdutos(doc, 'PRODUTOS VENCIDOS OU PRÓXIMOS DO VENCIMENTO', balanco.produtos_proximos_validade);
-        await tabelaProdutos(doc, 'PRODUTOS COM MAIOR MOVIMENTAÇÃO', balanco.maior_movimentacao);
+        await tabelaProdutos(doc, 'PRODUTOS COM MAIOR MOVIMENTAÇÃO', balanco.maior_movimentacao, true);
 
         secaoTitulo(doc, 'POSSÍVEIS PROBLEMAS');
         lista(doc, balanco.problemas);

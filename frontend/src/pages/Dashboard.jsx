@@ -32,8 +32,9 @@ export default function Dashboard() {
   const saidas = useFetch(() => saidaService.listar(), []);
 
   const lista = Array.isArray(produtos.dados) ? produtos.dados : [];
+  const listaEntrada = Array.isArray(entradas.dados) ? entradas.dados : [];
   const totais = useMemo(() => contarSituacoes(lista), [lista]);
-  const semValidade = lista.length > 0 && lista.every((p) => !p.validade);
+  const semValidade = listaEntrada.length > 0 && listaEntrada.every((e) => !e.validade);
 
   const totalEntradas = useMemo(
     () => (Array.isArray(entradas.dados) ? entradas.dados : []).filter((e) => dentroDoPeriodo(e.data_entrada, dias)).length,

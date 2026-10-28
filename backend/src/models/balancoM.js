@@ -30,20 +30,22 @@ async function buscarMovimentacao(dias) {
     const result = await DB.query(
         `
         WITH ent AS (
-            SELECT id_produto, SUM(quantidade) AS total
+            SELECT id_produto, SUM(quantidade) AS total, SUM(COALESCE(valor, 0)) AS valor
             FROM entrada
             WHERE data_entrada >= CURRENT_DATE - $1::int
             GROUP BY id_produto
         ),
         sai AS (
-            SELECT id_produto, SUM(quantidade) AS total
+            SELECT id_produto, SUM(quantidade) AS total, SUM(COALESCE(valor, 0)) AS valor
             FROM saida
             WHERE data_saida >= CURRENT_DATE - $1::int
             GROUP BY id_produto
         )
         SELECT p.produto_id, p.nome,
                COALESCE(ent.total, 0) AS entradas,
-               COALESCE(sai.total, 0) AS saidas
+               COALESCE(sai.total, 0) AS saidas,
+               COALESCE(ent.valor, 0) AS valor_entradas,
+               COALESCE(sai.valor, 0) AS valor_saidas
         FROM produto p
         LEFT JOIN ent ON ent.id_produto = p.produto_id
         LEFT JOIN sai ON sai.id_produto = p.produto_id

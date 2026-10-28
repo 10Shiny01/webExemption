@@ -26,8 +26,8 @@ async function getById(id) {
 
 async function createSaida(saida) {
     const result = await Pool.query(
-        `INSERT INTO saida(id_produto, id_usuario, quantidade, observacao) VALUES ($1, $2, $3, $4) RETURNING *`,
-        [saida.id_produto, saida.id_usuario, saida.quantidade,  saida.observacao ]
+        `INSERT INTO saida(id_produto, id_usuario, quantidade, observacao, valor) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [saida.id_produto, saida.id_usuario, saida.quantidade,  saida.observacao, saida.valor ]
     );
     return result.rows[0];
 }

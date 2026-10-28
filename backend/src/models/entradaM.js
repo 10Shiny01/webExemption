@@ -25,8 +25,8 @@ async function getById(id) {
 
 async function createEntrada(entrada) {
     const result = await Pool.query(
-        `INSERT INTO entrada (id_produto, quantidade, fornecedor, validade) VALUES ($1, $2, $3, $4) RETURNING *`,
-        [ entrada.id_produto, entrada.quantidade, entrada.fornecedor,entrada.validade]
+        `INSERT INTO entrada (id_produto, quantidade, fornecedor, validade, valor) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [ entrada.id_produto, entrada.quantidade, entrada.fornecedor, entrada.validade, entrada.valor ]
     );
 
     return result.rows[0];

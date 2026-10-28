@@ -20,6 +20,7 @@ export default function Saidas() {
   const [produto, setProduto] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [observacao, setObservacao] = useState('');
+  const [valor,setValor] = useState('');
   const [erros, setErros] = useState({});
 
   const listaProdutos = Array.isArray(produtos.dados) ? produtos.dados : [];
@@ -46,6 +47,7 @@ export default function Saidas() {
           id_usuario: usuario.id, // funcionário responsável = usuário autenticado
           quantidade: Number(quantidade),
           observacao: observacao.trim() || null,
+          valor: valor || null
         }),
       'Saída registrada.'
     );
@@ -53,6 +55,7 @@ export default function Saidas() {
       setProduto('');
       setQuantidade('');
       setObservacao('');
+      setValor('');
       saidas.recarregar();
       produtos.recarregar();
     }
@@ -68,6 +71,7 @@ export default function Saidas() {
     },
     { key: 'usuario_nome', header: 'Responsável' },
     { key: 'observacao', header: 'Observação', render: (s) => s.observacao || '—' },
+    { key: 'valor', header:'Valor'}
   ];
 
   return (
@@ -94,6 +98,13 @@ export default function Saidas() {
             onChange={(e) => setQuantidade(e.target.value)}
             error={erros.quantidade}
           />
+                 <FormField
+                    label="Valor"
+                    type="number"
+                    value={valor}
+                    onChange={(e) => setValor(e.target.value)}
+                    error={erros.valor}
+                  />
           <FormField label="Responsável" value={usuario?.nome ?? ''} disabled readOnly />
         </div>
         <FormField
