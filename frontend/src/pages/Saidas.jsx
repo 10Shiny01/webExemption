@@ -11,6 +11,8 @@ import produtoService from '../services/produtoS.js';
 import saidaService from '../services/saidaS.js';
 import { formatarDataHora, formatarNumero, quantidadeDe } from '../utils/estoque.js';
 
+const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export default function Saidas() {
   const { usuario } = useAuth();
   const produtos = useFetch(() => produtoService.listar(), []);
@@ -71,7 +73,7 @@ export default function Saidas() {
     },
     { key: 'usuario_nome', header: 'Responsável' },
     { key: 'observacao', header: 'Observação', render: (s) => s.observacao || '—' },
-    { key: 'valor', header:'Valor'}
+    {key: 'valor',header: 'Valor',render: (s) =>s.valor != null ? <span style={{ color: 'var(--cor-sucesso)', fontWeight: 600 }}>{moeda(s.valor)}</span> : '—',},
   ];
 
   return (

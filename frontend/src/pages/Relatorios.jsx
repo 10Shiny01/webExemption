@@ -19,6 +19,8 @@ import { formatarDataHora, formatarNumero, paraData } from '../utils/estoque.js'
 const paraISO = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 function periodoInicial() {
   const fim = new Date();
   const inicio = new Date();
@@ -100,26 +102,31 @@ export default function Relatorios() {
       item.valorTotal = item.valorS - item.valorE;
      
       const dia = paraISO(paraData(m.data));
-      const registro = porDia.get(dia) ?? { dia, entradas: 0, saidas: 0 };
-      registro[m.tipo === 'entrada' ? 'entradas' : 'saidas'] += 1;
-      porDia.set(dia, registro);
+      const registro = porDia.get(dia) ?? { dia, entradas: 0, saidas: 0, valorE: 0, valorS: 0 };
+registro[m.tipo === 'entrada' ? 'entradas' : 'saidas'] += 1;
+if (m.tipo === 'entrada') registro.valorE += Number(m.valorE || 0);
+else registro.valorS += Number(m.valorS || 0);
+porDia.set(dia, registro);
     });
     return {
       totalEntradas: movimentos.filter((m) => m.tipo === 'entrada').length,
       totalSaidas: movimentos.filter((m) => m.tipo === 'saida').length,
+      totalValorE: movimentos.filter((m) => m.tipo === 'entrada').reduce((soma, m) => soma + Number(m.valorE || 0), 0),
+      totalValorS: movimentos.filter((m) => m.tipo === 'saida').reduce((soma, m) => soma + Number(m.valorS || 0), 0), 
       produtos: [...porProduto.values()].sort((a, b) => a.produto.localeCompare(b.produto)),
       dias: [...porDia.values()].sort((a, b) => a.dia.localeCompare(b.dia)),
     };
   }, [movimentos]);
 
   const maiorDia = Math.max(1, ...resumo.dias.map((d) => Math.max(d.entradas, d.saidas)));
+  const maiorValorDia = Math.max(1, ...resumo.dias.map((d) => Math.max(d.valorE, d.valorS)));
   const periodoInvalido = periodo.de > periodo.ate;
 
   const colunasProduto = [
     { key: 'produto', header: 'Produto' },
     { key: 'entradas', header: 'Entrou', render: (p) => `${formatarNumero(p.entradas)} ${p.unidade}` },
     { key: 'saidas', header: 'Saiu', render: (p) => `${formatarNumero(p.saidas)} ${p.unidade}` },
-    { key: 'valorTotal', header:'Valor Total',render: (p) =>formatarNumero(p.valorTotal)},
+    { key: 'valorTotal', header: 'Valor Total', render: (p) => (<span style={p.valorTotal > 0 ? { color: 'var(--cor-sucesso)', fontWeight: 600 } : p.valorTotal < 0 ? { color: 'var(--cor-erro)', fontWeight: 600 } : undefined}>{moeda(Math.abs(p.valorTotal))}</span>) },
   ];
 
   const colunasHistorico = [
@@ -132,8 +139,8 @@ export default function Relatorios() {
     { key: 'produto', header: 'Produto' },
     { key: 'quantidade', header: 'Quantidade', render: (m) => `${formatarNumero(m.quantidade)} ${m.unidade}` },
     { key: 'detalhe', header: 'Fornecedor / observação' },
-    { key: 'valorS', header:'Valor Saida'},
-    { key: 'valorE', header:'Valor Entrada'},
+    { key: 'valorS', header: 'Valor Saida', render: (m) => (m.valorS != null ? <span style={{ color: 'var(--cor-sucesso)', fontWeight: 600 }}>{moeda(m.valorS)}</span> : '-') },
+    { key: 'valorE', header: 'Valor Entrada', render: (m) => (m.valorE != null ? <span style={{ color: 'var(--cor-erro)', fontWeight: 600 }}>{moeda(m.valorE)}</span> : '-') },
   ];
 
   return (
@@ -154,6 +161,8 @@ export default function Relatorios() {
           <div className="grade grade--indicadores">
             <StatCard icon={FileText} rotulo="Entradas no período" valor={resumo.totalEntradas} detalhe="registros" />
             <StatCard icon={FileText} rotulo="Saídas no período" valor={resumo.totalSaidas} detalhe="registros" />
+            <StatCard icon={FileText} rotulo="Ganho no período" valor={moeda(resumo.totalValorS)} detalhe="saídas" />
+            <StatCard icon={FileText} rotulo="Perda no período" valor={moeda(resumo.totalValorE)} detalhe="entradas" />   
           </div>
 
           {resumo.dias.length >= 2 && (
@@ -166,6 +175,8 @@ export default function Relatorios() {
                       <div className="grafico__barras">
                         <span className="grafico__barra grafico__barra--entrada" style={{ height: `${(d.entradas / maiorDia) * 100}%` }} />
                         <span className="grafico__barra grafico__barra--saida" style={{ height: `${(d.saidas / maiorDia) * 100}%` }} />
+                         <span className="grafico__barra grafico__barra--valorEntrada" title={moeda(d.valorE)} style={{ height: `${(d.valorE / maiorValorDia) * 100}%` }} />
+                         <span className="grafico__barra grafico__barra--valorSaida" title={moeda(d.valorS)} style={{ height: `${(d.valorS / maiorValorDia) * 100}%` }} />
                       </div>
                       <span className="grafico__rotulo">{d.dia.slice(8, 10)}/{d.dia.slice(5, 7)}</span>
                     </div>
@@ -174,6 +185,8 @@ export default function Relatorios() {
                 <p className="grafico__legenda">
                   <span className="grafico__chave grafico__chave--entrada" /> Entradas
                   <span className="grafico__chave grafico__chave--saida" /> Saídas
+                    <span className="grafico__chave grafico__chave--vEntrada" /> Perda
+                    <span className="grafico__chave grafico__chave--vSaida" /> Ganho 
                 </p>
               </div>
             </section>

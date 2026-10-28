@@ -10,6 +10,8 @@ import produtoService from '../services/produtoS.js';
 import entradaService from '../services/entradaS.js';
 import { formatarData, formatarDataHora, formatarNumero } from '../utils/estoque.js';
 
+const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export default function Entradas() {
   const produtos = useFetch(() => produtoService.listar(), []);
   const entradas = useFetch(() => entradaService.listar(), []);
@@ -71,7 +73,7 @@ export default function Entradas() {
     },
     { key: 'fornecedor', header: 'Fornecedor', render: (e) => e.fornecedor || '—' },
     { key: 'validade', header: 'Validade', render: (e) => formatarData(e.validade) },
-    { key: 'valor', header:'Valor'}
+    {key: 'valor',header: 'Valor',render: (e) =>e.valor != null ? <span style={{ color: 'var(--cor-erro)', fontWeight: 600 }}>{moeda(e.valor)}</span> : '—',},
   ];
 
   return (

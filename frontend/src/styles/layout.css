@@ -449,6 +449,8 @@
 .grafico__barra { display: block; width: 40%; max-width: 1rem; min-height: 2px; border-radius: 3px 3px 0 0; }
 .grafico__barra--entrada, .grafico__chave--entrada { background: var(--cor-vinho); }
 .grafico__barra--saida, .grafico__chave--saida { background: #c9a35b; }
+.grafico__barra--valorSaida, .grafico__chave--vSaida { background: var(--cor-sucesso); }
+.grafico__barra--valorEntrada, .grafico__chave--vEntrada { background: var(--cor-erro); }
 .grafico__rotulo { font-size: 0.75rem; color: var(--cor-texto-suave); }
 .grafico__legenda { display: flex; align-items: center; gap: var(--espaco-2); margin: var(--espaco-3) 0 0; font-size: var(--texto-pequeno); }
 .grafico__chave { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 3px; margin-left: var(--espaco-3); }
