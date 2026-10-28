@@ -78,11 +78,7 @@ export default function BalancoGeral() {
           </Button>
         </div>
       </div>
-
-      <Feedback type="info">
-        A API gera o balanço por período. Perguntas livres sobre o estoque ainda não estão disponíveis.
-      </Feedback>
-
+      
       {carregando && <StateMessage tipo="carregando" mensagem="Gerando o balanço. A análise pode levar até 30 segundos." />}
       {erro && <StateMessage tipo="erro" mensagem={erro} onRetry={gerar} />}
 

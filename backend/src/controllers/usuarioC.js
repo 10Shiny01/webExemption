@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import usuarioModel from '../models/usuarioM.js';
-
+import { revogarToken } from '../middlewares/authMiddleware.js';
 const SALT_ROUNDS = 10;
 
 function semSenha(usuario) {
@@ -84,7 +84,7 @@ async function login(req, res) {
             
         },
         process.env.JWT_SECRET,
-        { expiresIn: '10h' }
+        { expiresIn: '8h' }
     );
 
     res.json({
@@ -98,7 +98,8 @@ async function login(req, res) {
     });
 }
 async function logout(req, res) {
-    jwt.sign({}, process.env.JWT_SECRET, { expiresIn: '1ms' }); 
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) revogarToken(token);
     res.json({ mensagem: 'Logout realizado com sucesso' });
 }
 export default { getUsuario, getNome, createUsuario, updateUsuario, deleteUsuario, login, logout };

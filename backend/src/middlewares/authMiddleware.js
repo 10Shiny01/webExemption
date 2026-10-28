@@ -1,7 +1,10 @@
 import jwt from 'jsonwebtoken';
 
-// Verifica se a requisição tem um token JWT válido no header Authorization.
-// Uso: authMiddleware.verificarToken em qualquer rota que deve ser protegida.
+const tokensRevogados = new Set();
+export function revogarToken(token) {
+    tokensRevogados.add(token);
+}
+
 function verificarToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
@@ -14,6 +17,9 @@ function verificarToken(req, res, next) {
     if (tipo !== 'Bearer' || !token) {
         return res.status(401).json({ erro: 'Formato de token inválido. Use: Bearer <token>' });
     }
+    if (tokensRevogados.has(token)) {
+    return res.status(401).json({ erro: 'Sessão encerrada' });
+    }
 
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
@@ -24,8 +30,6 @@ function verificarToken(req, res, next) {
     }
 }
 
-// Verifica se o usuário autenticado tem perfil 'adm'.
-// Deve ser usado DEPOIS do verificarToken na cadeia de middlewares.
 function somenteAdm(req, res, next) {
     if (req.usuario?.perfil !== 'adm') {
         return res.status(403).json({ erro: 'Acesso restrito a administradores' });

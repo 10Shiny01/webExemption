@@ -37,5 +37,6 @@ export async function login(email, senha) {
 
 // O endpoint de logout do backend não invalida o token; encerramos a sessão no navegador.
 export function logout() {
+  request('/usuario/api/system/login').catch(() => {});
   limparSessao();
 }

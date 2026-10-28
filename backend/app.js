@@ -9,7 +9,10 @@ import receitaRoute from './src/routes/receitaR.js';
 import ingredienteRoute from './src/routes/ingredienteR.js';
 import documentoRoute from './src/routes/documentoR.js';
 import balancoRoute from './src/routes/balancoR.js';
-//import './src/jobs/notificacaoJ.js';
+import helmet from 'helmet';
+import cors from 'cors';
+
+
 
 
 try {
@@ -21,6 +24,11 @@ try {
 
 const app = express();
 const port = 3000;
+
+app.use(helmet());
+app.use(cors({ origin: process.env.FRONT_URL })); // só o endereço do seu front
+app.use(express.json({ limit: '100kb' }));
+
 
 app.use(express.json());
 app.use("/entrada", entradaRoute);
