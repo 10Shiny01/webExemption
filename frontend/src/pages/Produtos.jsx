@@ -26,7 +26,6 @@ import {
 
 function ProdutoForm({ produto, categorias, salvando, onSalvar, onClose }) {
   const [nome, setNome] = useState(produto?.nome ?? '');
-  const [quantidade, setQuantidade] = useState(produto ? String(quantidadeDe(produto)) : '0');
   const [unidade, setUnidade] = useState(String(Math.max(UNIDADES.indexOf(produto?.unidade), 0)));
   const [minimo, setMinimo] = useState(String(produto?.estoque_minimo ?? 0));
   const [categoria, setCategoria] = useState(produto?.id_categoria ? String(produto.id_categoria) : '');
@@ -36,14 +35,12 @@ function ProdutoForm({ produto, categorias, salvando, onSalvar, onClose }) {
     e.preventDefault();
     const novos = {};
     if (!nome.trim()) novos.nome = 'Informe o nome do produto.';
-    if (quantidade === '' || Number(quantidade) < 0) novos.quantidade = 'Informe uma quantidade válida.';
     if (minimo === '' || Number(minimo) < 0) novos.minimo = 'Informe um estoque mínimo válido.';
     setErros(novos);
     if (Object.keys(novos).length) return;
 
     onSalvar({
       nome: nome.trim(),
-      quantidade: Number(quantidade),
       unidade: Number(unidade), // a API espera o índice: 0 = g, 1 = ml, 2 = un
       estoque_minimo: Number(minimo),
       id_categoria: categoria ? Number(categoria) : null,
@@ -67,16 +64,6 @@ function ProdutoForm({ produto, categorias, salvando, onSalvar, onClose }) {
     >
       <form id="form-produto" onSubmit={enviar} noValidate>
         <FormField label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} error={erros.nome} />
-        <div className="linha-campos">
-          <FormField
-            label="Quantidade em estoque"
-            type="number"
-            min="0"
-            step="any"
-            value={quantidade}
-            onChange={(e) => setQuantidade(e.target.value)}
-            error={erros.quantidade}
-          />
           <FormField label="Unidade" as="select" value={unidade} onChange={(e) => setUnidade(e.target.value)}>
             {UNIDADES.map((u, i) => (
               <option key={u} value={i}>
@@ -84,7 +71,6 @@ function ProdutoForm({ produto, categorias, salvando, onSalvar, onClose }) {
               </option>
             ))}
           </FormField>
-        </div>
         <FormField
           label="Estoque mínimo"
           type="number"
@@ -201,7 +187,7 @@ export default function Produtos() {
       render: (p) => `${formatarNumero(quantidadeDe(p))} ${p.unidade ?? ''}`,
     },
     { key: 'estoque_minimo', header: 'Mínimo', render: (p) => `${formatarNumero(p.estoque_minimo)} ${p.unidade ?? ''}` },
-    { key: 'validade', header: 'Validade', render: (p) => formatarData(p.validade) },
+    
     {
       key: 'situacao',
       header: 'Situação',
