@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import PageHeader from '../components/PageHeader.jsx';
 import DataTable from '../components/DataTable.jsx';
 import Badge from '../components/Badge.jsx';
@@ -8,21 +8,30 @@ import Button from '../components/Button.jsx';
 import FormField from '../components/FormField.jsx';
 import Modal from '../components/Modal.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import Feedback from '../components/Feedback.jsx';
 import useFetch from '../hooks/useFetch.js';
 import useAcao from '../hooks/useAcao.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import produtoService from '../services/produtoS.js';
 import categoriaService from '../services/categoriaS.js';
+import entradaService from '../services/entradaS.js';
 import {
   ROTULO_SITUACAO,
   TOM_SITUACAO,
   UNIDADES,
+  descreverPrazo,
   formatarData,
   formatarNumero,
+  comSaldoEstimado,
+  lotesPorProduto,
+  normalizarBusca,
   podeExcluir,
   quantidadeDe,
   situacoesDe,
 } from '../utils/estoque.js';
+
+const TOM_LOTE = { vencido: 'erro', proximo: 'aviso', normal: 'ok' };
+const ROTULO_LOTE = { vencido: 'Vencido', proximo: 'Próximo do vencimento', normal: 'No prazo' };
 
 function ProdutoForm({ produto, categorias, salvando, onSalvar, onClose }) {
   const [nome, setNome] = useState(produto?.nome ?? '');
@@ -93,8 +102,8 @@ function ProdutoForm({ produto, categorias, salvando, onSalvar, onClose }) {
   );
 }
 
-function DetalhesProduto({ produto, onClose }) {
-  const situacoes = situacoesDe(produto);
+function DetalhesProduto({ produto, lotes, onClose }) {
+  const situacoes = situacoesDe(produto, lotes);
   return (
     <Modal titulo={produto.nome} onClose={onClose}>
       <dl className="detalhes">
@@ -109,7 +118,28 @@ function DetalhesProduto({ produto, onClose }) {
           {formatarNumero(produto.estoque_minimo)} {produto.unidade}
         </dd>
         <dt>Validade</dt>
-        <dd>{formatarData(produto.validade)}</dd>
+        <dd>
+          {lotes.length === 0 ? (
+            'Nenhum lote com validade em estoque.'
+          ) : (
+            <>
+              <ul className="lista-lotes">
+                {lotes.map((l) => (
+                  <li key={l.entrada_id}>
+                    <span>
+                      <strong>{formatarData(l.validade)}</strong> · {formatarNumero(l.saldo)} {produto.unidade}
+                      <span className="tabela__sub">
+                        Entrada de {formatarData(l.data_entrada)} · {descreverPrazo(l.dias)}
+                      </span>
+                    </span>
+                    <Badge tom={TOM_LOTE[l.situacao]}>{ROTULO_LOTE[l.situacao]}</Badge>
+                  </li>
+                ))}
+              </ul>
+              <p className="lista-lotes__nota">Cada entrada tem a sua validade. O saldo por lote é estimado: as entradas mais antigas saem primeiro.</p>
+            </>
+          )}
+        </dd>
         <dt>Situação</dt>
         <dd className="selos">
           {situacoes.map((s) => (
@@ -132,6 +162,7 @@ export default function Produtos() {
 
   const produtos = useFetch(() => produtoService.listar(), []);
   const categorias = useFetch(() => categoriaService.listar(), []);
+  const entradas = useFetch(() => entradaService.listar(), []);
   const { executando, executar } = useAcao();
 
   const [formulario, setFormulario] = useState(null); // { produto } ao abrir
@@ -140,16 +171,33 @@ export default function Produtos() {
 
   const listaCategorias = Array.isArray(categorias.dados) ? categorias.dados : [];
 
+  // A validade vem das entradas (lotes que ainda têm saldo), não do cadastro do produto.
+  const lotes = useMemo(
+    () => lotesPorProduto(comSaldoEstimado(entradas.dados, produtos.dados)),
+    [entradas.dados, produtos.dados]
+  );
+
   const filtrados = useMemo(() => {
     const lista = Array.isArray(produtos.dados) ? produtos.dados : [];
-    const termo = busca.trim().toLowerCase();
-    return lista.filter(
-      (p) =>
-        (!termo || p.nome?.toLowerCase().includes(termo)) &&
-        (!categoria || String(p.id_categoria) === categoria) &&
-        (!situacao || situacoesDe(p).includes(situacao))
-    );
-  }, [produtos.dados, busca, categoria, situacao]);
+    const termo = normalizarBusca(busca);
+    return lista
+      .filter(
+        (p) =>
+          (!termo || normalizarBusca(`${p.nome} ${p.categoria_nome ?? ''}`).includes(termo)) &&
+          (!categoria || String(p.id_categoria) === categoria) &&
+          (!situacao || situacoesDe(p, lotes.get(p.produto_id)).includes(situacao))
+      )
+      .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+  }, [produtos.dados, busca, categoria, situacao, lotes]);
+
+  const filtrando = Boolean(busca.trim() || categoria || situacao);
+  const totalProdutos = Array.isArray(produtos.dados) ? produtos.dados.length : 0;
+
+  function limparFiltros() {
+    setBusca('');
+    setCategoria('');
+    mudarSituacao('');
+  }
 
   function mudarSituacao(valor) {
     const novos = new URLSearchParams(params);
@@ -179,21 +227,40 @@ export default function Produtos() {
   }
 
   const colunas = [
-    { key: 'nome', header: 'Produto' },
+    { key: 'nome', header: 'Produto', render: (p) => <strong>{p.nome}</strong> },
     { key: 'categoria_nome', header: 'Categoria', render: (p) => p.categoria_nome ?? '—' },
     {
       key: 'quantidade',
       header: 'Em estoque',
+      className: 'col-num',
       render: (p) => `${formatarNumero(quantidadeDe(p))} ${p.unidade ?? ''}`,
     },
-    { key: 'estoque_minimo', header: 'Mínimo', render: (p) => `${formatarNumero(p.estoque_minimo)} ${p.unidade ?? ''}` },
-    
+    {
+      key: 'estoque_minimo',
+      header: 'Mínimo',
+      className: 'col-num',
+      render: (p) => `${formatarNumero(p.estoque_minimo)} ${p.unidade ?? ''}`,
+    },
+    {
+      key: 'validade',
+      header: 'Validade',
+      render: (p) => {
+        const proximo = lotes.get(p.produto_id)?.[0]; // lote com a validade mais próxima
+        if (!proximo) return '—';
+        return (
+          <>
+            {formatarData(proximo.validade)}
+            <span className="tabela__sub">{descreverPrazo(proximo.dias)}</span>
+          </>
+        );
+      },
+    },
     {
       key: 'situacao',
       header: 'Situação',
       render: (p) => (
         <span className="selos">
-          {situacoesDe(p).map((s) => (
+          {situacoesDe(p, lotes.get(p.produto_id)).map((s) => (
             <Badge key={s} tom={TOM_SITUACAO[s]}>
               {ROTULO_SITUACAO[s]}
             </Badge>
@@ -252,7 +319,8 @@ export default function Produtos() {
               id="busca-produto"
               className="campo__controle"
               type="search"
-              placeholder="Nome do produto"
+              placeholder="Nome ou categoria"
+              autoComplete="off"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -274,13 +342,33 @@ export default function Produtos() {
             </option>
           ))}
         </FormField>
+        {filtrando && (
+          <Button variant="discreto" icon={X} onClick={limparFiltros}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
+
+      {entradas.erro && (
+        <Feedback type="aviso">
+          Não foi possível carregar as validades das entradas. Os alertas de vencimento podem estar incompletos.
+        </Feedback>
+      )}
+      {!produtos.carregando && !produtos.erro && totalProdutos > 0 && (
+        <p className="barra__resumo" aria-live="polite">
+          {filtrando ? `${filtrados.length} de ${totalProdutos} produtos` : `${totalProdutos} ${totalProdutos === 1 ? 'produto' : 'produtos'}`}
+        </p>
+      )}
 
       <DataTable
         legenda="Lista de produtos"
         columns={colunas}
         rows={filtrados}
         rowKey="produto_id"
+        rowClassName={(p) => {
+          const s = situacoesDe(p, lotes.get(p.produto_id));
+          return s.includes('vencido') ? 'linha--erro' : s.includes('proximo') || s.includes('baixo') ? 'linha--aviso' : '';
+        }}
         carregando={produtos.carregando}
         erro={produtos.erro}
         onRetry={produtos.recarregar}
@@ -298,7 +386,7 @@ export default function Produtos() {
           onClose={() => setFormulario(null)}
         />
       )}
-      {detalhe && <DetalhesProduto produto={detalhe} onClose={() => setDetalhe(null)} />}
+      {detalhe && <DetalhesProduto produto={detalhe} lotes={lotes.get(detalhe.produto_id) ?? []} onClose={() => setDetalhe(null)} />}
       {exclusao && (
         <ConfirmDialog
           titulo="Excluir produto"

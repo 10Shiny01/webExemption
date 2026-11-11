@@ -25,7 +25,13 @@ export default function Saidas() {
   const [valor,setValor] = useState('');
   const [erros, setErros] = useState({});
 
-  const listaProdutos = Array.isArray(produtos.dados) ? produtos.dados : [];
+  const listaProdutos = useMemo(
+    () =>
+      [...(Array.isArray(produtos.dados) ? produtos.dados : [])].sort((a, b) =>
+        String(a.nome).localeCompare(String(b.nome), 'pt-BR')
+      ),
+    [produtos.dados]
+  );
   const unidades = useMemo(() => new Map(listaProdutos.map((p) => [p.produto_id, p.unidade])), [listaProdutos]);
   const selecionado = listaProdutos.find((p) => String(p.produto_id) === produto);
 
@@ -65,15 +71,16 @@ export default function Saidas() {
 
   const colunas = [
     { key: 'data_saida', header: 'Data', render: (s) => formatarDataHora(s.data_saida) },
-    { key: 'produto_nome', header: 'Produto' },
+    { key: 'produto_nome', header: 'Produto', render: (s) => <strong>{s.produto_nome}</strong> },
     {
       key: 'quantidade',
       header: 'Quantidade',
+      className: 'col-num',
       render: (s) => `${formatarNumero(s.quantidade)} ${unidades.get(s.id_produto) ?? ''}`,
     },
     { key: 'usuario_nome', header: 'Responsável' },
     { key: 'observacao', header: 'Observação', render: (s) => s.observacao || '—' },
-    {key: 'valor',header: 'Valor',render: (s) =>s.valor != null ? <span style={{ color: 'var(--cor-sucesso)', fontWeight: 600 }}>{moeda(s.valor)}</span> : '—',},
+    {key: 'valor',header: 'Valor',className: 'col-num',render: (s) =>s.valor != null ? <span style={{ color: 'var(--cor-sucesso)', fontWeight: 600 }}>{moeda(s.valor)}</span> : '—',},
   ];
 
   return (
@@ -82,7 +89,7 @@ export default function Saidas() {
 
       <form className="painel" onSubmit={registrar} noValidate aria-labelledby="titulo-nova-saida">
         <h2 id="titulo-nova-saida">Nova saída</h2>
-        <div className="linha-campos linha-campos--3">
+        <div className="linha-campos linha-campos--4">
           <FormField label="Produto" as="select" value={produto} onChange={(e) => setProduto(e.target.value)} error={erros.produto}>
             <option value="">Selecione</option>
             {listaProdutos.map((p) => (
@@ -100,13 +107,15 @@ export default function Saidas() {
             onChange={(e) => setQuantidade(e.target.value)}
             error={erros.quantidade}
           />
-                 <FormField
-                    label="Valor"
-                    type="number"
-                    value={valor}
-                    onChange={(e) => setValor(e.target.value)}
-                    error={erros.valor}
-                  />
+          <FormField
+            label="Valor (R$)"
+            type="number"
+            min="0"
+            step="0.01"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            error={erros.valor}
+          />
           <FormField label="Responsável" value={usuario?.nome ?? ''} disabled readOnly />
         </div>
         <FormField

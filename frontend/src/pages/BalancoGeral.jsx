@@ -107,7 +107,7 @@ export default function BalancoGeral() {
           <div className="grade grade--balanco">
             <ListaProdutos titulo="Produtos críticos" itens={balanco.produtos_criticos} />
             <ListaProdutos titulo="Produtos para reposição" itens={balanco.produtos_reposicao} />
-            <ListaProdutos titulo="Validade" itens={balanco.produtos_proximos_validade} />
+            <ListaProdutos titulo="Lotes vencidos ou próximos do vencimento" itens={balanco.produtos_proximos_validade} />
             <ListaProdutos titulo="Maior movimentação" itens={balanco.maior_movimentacao} />
           </div>
           <ListaTextos titulo="Problemas detectados" itens={balanco.problemas} />

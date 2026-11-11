@@ -9,7 +9,7 @@ import useFetch from '../hooks/useFetch.js';
 import produtoService from '../services/produtoS.js';
 import entradaService from '../services/entradaS.js';
 import saidaService from '../services/saidaS.js';
-import { DIAS_ALERTA, contarSituacoes, paraData } from '../utils/estoque.js';
+import { DIAS_ALERTA, comSaldoEstimado, contarSituacoes, lotesPorProduto, paraData } from '../utils/estoque.js';
 
 const PERIODOS = [
   { dias: 7, rotulo: '7 dias' },
@@ -33,7 +33,9 @@ export default function Dashboard() {
 
   const lista = Array.isArray(produtos.dados) ? produtos.dados : [];
   const listaEntrada = Array.isArray(entradas.dados) ? entradas.dados : [];
-  const totais = useMemo(() => contarSituacoes(lista), [lista]);
+  // A validade vem das entradas (lotes que ainda têm saldo), não do cadastro do produto.
+  const lotes = useMemo(() => lotesPorProduto(comSaldoEstimado(listaEntrada, lista)), [listaEntrada, lista]);
+  const totais = useMemo(() => contarSituacoes(lista, lotes), [lista, lotes]);
   const semValidade = listaEntrada.length > 0 && listaEntrada.every((e) => !e.validade);
 
   const totalEntradas = useMemo(
@@ -66,9 +68,15 @@ export default function Dashboard() {
         </div>
       </PageHeader>
 
+      {entradas.erro && (
+        <Feedback type="aviso">
+          Não foi possível carregar as entradas. Os alertas de vencimento podem estar incompletos.
+        </Feedback>
+      )}
       {semValidade && (
         <Feedback type="info">
-          A API ainda não informa a validade dos produtos, por isso os alertas de vencimento aparecem zerados.
+          Nenhuma entrada tem validade registrada, por isso os alertas de vencimento aparecem zerados. Informe a
+          validade ao registrar cada entrada.
         </Feedback>
       )}
 
@@ -80,7 +88,7 @@ export default function Dashboard() {
             tom="aviso"
             valor={totais.proximo}
             titulo="Próximos do vencimento"
-            descricao={`Vencem em até ${DIAS_ALERTA} dias`}
+            descricao={`Lotes que vencem em até ${DIAS_ALERTA} dias`}
             to="/produtos?situacao=proximo"
           />
           <AlertCard
@@ -88,7 +96,7 @@ export default function Dashboard() {
             tom="erro"
             valor={totais.vencido}
             titulo="Vencidos"
-            descricao="Ainda constam em estoque"
+            descricao="Lotes vencidos ainda em estoque"
             to="/produtos?situacao=vencido"
           />
           <AlertCard

@@ -3,6 +3,7 @@ import { ChefHat, Pencil, Plus, Trash2, X } from 'lucide-react';
 import PageHeader from '../components/PageHeader.jsx';
 import StateMessage from '../components/StateMessage.jsx';
 import Badge from '../components/Badge.jsx';
+import Feedback from '../components/Feedback.jsx';
 import Button from '../components/Button.jsx';
 import FormField from '../components/FormField.jsx';
 import Modal from '../components/Modal.jsx';
@@ -291,7 +292,9 @@ export default function Receitas() {
       {!receitas.carregando && !receitas.erro && lista.length === 0 && (
         <StateMessage tipo="vazio" mensagem='Nenhuma receita cadastrada ainda. Use "Nova receita".' />
       )}
-      {ingredientes.erro && <p className="campo__erro">Não foi possível carregar os ingredientes: {ingredientes.erro}</p>}
+      {ingredientes.erro && (
+        <Feedback type="erro">Não foi possível carregar os ingredientes: {ingredientes.erro}</Feedback>
+      )}
 
       <div className="grade grade--receitas">
         {lista.map((r) => {

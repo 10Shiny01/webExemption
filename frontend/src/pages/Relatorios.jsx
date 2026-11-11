@@ -14,7 +14,16 @@ import produtoService from '../services/produtoS.js';
 import entradaService from '../services/entradaS.js';
 import saidaService from '../services/saidaS.js';
 import documentoService from '../services/documentoS.js';
-import { formatarDataHora, formatarNumero, paraData } from '../utils/estoque.js';
+import Feedback from '../components/Feedback.jsx';
+import {
+  comSaldoEstimado,
+  descreverPrazo,
+  formatarData,
+  formatarDataHora,
+  formatarNumero,
+  lotesPorProduto,
+  paraData,
+} from '../utils/estoque.js';
 
 const paraISO = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -40,6 +49,17 @@ export default function Relatorios() {
   const saidas = useFetch(() => saidaService.listar(), []);
 
   const { executando, executar } = useAcao();
+  const [filtroLote, setFiltroLote] = useState(''); // '' | 'vencido' | 'proximo'
+
+  // Validade por lote (entrada que ainda tem saldo), da mais próxima para a mais distante.
+  const lotes = useMemo(() => {
+    const unidades = new Map((Array.isArray(produtos.dados) ? produtos.dados : []).map((p) => [p.produto_id, p.unidade]));
+    return [...lotesPorProduto(comSaldoEstimado(entradas.dados, produtos.dados)).values()]
+      .flat()
+      .map((l) => ({ ...l, unidade: unidades.get(l.id_produto) ?? '' }))
+      .sort((a, b) => a.dias - b.dias);
+  }, [entradas.dados, produtos.dados]);
+  const lotesFiltrados = filtroLote ? lotes.filter((l) => l.situacao === filtroLote) : lotes;
 
   const carregando = (produtos.carregando || entradas.carregando || saidas.carregando) && !entradas.dados;
   const erro = produtos.erro ?? entradas.erro ?? saidas.erro;
@@ -129,6 +149,31 @@ porDia.set(dia, registro);
     { key: 'valorTotal', header: 'Valor Total', render: (p) => (<span style={p.valorTotal > 0 ? { color: 'var(--cor-sucesso)', fontWeight: 600 } : p.valorTotal < 0 ? { color: 'var(--cor-erro)', fontWeight: 600 } : undefined}>{moeda(Math.abs(p.valorTotal))}</span>) },
   ];
 
+  const TOM_LOTE = { vencido: 'erro', proximo: 'aviso', normal: 'ok' };
+  const ROTULO_LOTE = { vencido: 'Vencido', proximo: 'Próximo do vencimento', normal: 'No prazo' };
+  const FILTROS_LOTE = [
+    { valor: '', rotulo: 'Todos' },
+    { valor: 'vencido', rotulo: 'Vencidos' },
+    { valor: 'proximo', rotulo: 'Próximos' },
+  ];
+
+  const colunasLote = [
+    { key: 'produto_nome', header: 'Produto', render: (l) => <strong>{l.produto_nome}</strong> },
+    { key: 'data_entrada', header: 'Entrada', render: (l) => formatarData(l.data_entrada) },
+    { key: 'saldo', header: 'Ainda em estoque', className: 'col-num', render: (l) => `${formatarNumero(l.saldo)} ${l.unidade}` },
+    {
+      key: 'validade',
+      header: 'Validade',
+      render: (l) => (
+        <>
+          {formatarData(l.validade)}
+          <span className="tabela__sub">{descreverPrazo(l.dias)}</span>
+        </>
+      ),
+    },
+    { key: 'situacao', header: 'Situação', render: (l) => <Badge tom={TOM_LOTE[l.situacao]}>{ROTULO_LOTE[l.situacao]}</Badge> },
+  ];
+
   const colunasHistorico = [
     { key: 'data', header: 'Data', render: (m) => formatarDataHora(m.data) },
     {
@@ -151,7 +196,7 @@ porDia.set(dia, registro);
         <FormField label="De" type="date" value={periodo.de} onChange={(e) => setPeriodo({ ...periodo, de: e.target.value })} />
         <FormField label="Até" type="date" value={periodo.ate} onChange={(e) => setPeriodo({ ...periodo, ate: e.target.value })} />
       </div>
-      {periodoInvalido && <p className="campo__erro">A data inicial deve ser anterior à data final.</p>}
+      {periodoInvalido && <Feedback type="erro">A data inicial deve ser anterior à data final.</Feedback>}
 
       {carregando && <StateMessage tipo="carregando" />}
       {erro && <StateMessage tipo="erro" mensagem={erro} onRetry={() => [produtos, entradas, saidas].forEach((f) => f.recarregar())} />}
@@ -214,6 +259,38 @@ porDia.set(dia, registro);
             />
           </section>
         </>
+      )}
+
+      {!carregando && !erro && (
+        <section className="secao" aria-labelledby="titulo-lotes">
+          <div className="pagina-topo">
+            <div>
+              <h2 id="titulo-lotes">Validade dos lotes em estoque</h2>
+              <p className="texto-suave">Cada entrada tem a sua validade. Aparecem só os lotes que ainda têm saldo.</p>
+            </div>
+            <div className="segmentos" role="group" aria-label="Filtrar lotes por situação">
+              {FILTROS_LOTE.map((f) => (
+                <button
+                  key={f.valor}
+                  type="button"
+                  className={`segmentos__item ${filtroLote === f.valor ? 'segmentos__item--ativo' : ''}`}
+                  aria-pressed={filtroLote === f.valor}
+                  onClick={() => setFiltroLote(f.valor)}
+                >
+                  {f.rotulo}
+                </button>
+              ))}
+            </div>
+          </div>
+          <DataTable
+            legenda="Validade dos lotes em estoque"
+            columns={colunasLote}
+            rows={lotesFiltrados}
+            rowKey="entrada_id"
+            rowClassName={(l) => (l.situacao === 'vencido' ? 'linha--erro' : l.situacao === 'proximo' ? 'linha--aviso' : '')}
+            vazio={filtroLote ? 'Nenhum lote nesta situação.' : 'Nenhum lote com validade em estoque.'}
+          />
+        </section>
       )}
 
       {isAdmin && (

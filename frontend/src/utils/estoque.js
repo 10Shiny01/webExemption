@@ -55,19 +55,82 @@ export function diasParaVencer(validade) {
   return Math.round((data - inicioHoje) / 86400000);
 }
 
-// Situações de um produto. Vencido e próximo do vencimento nunca se misturam.
-export function situacoesDe(produto) {
+// A validade pertence à entrada (lote), não ao produto. Só importam os lotes que ainda têm
+// saldo em estoque. A API não informa o saldo de cada lote, então ele é estimado aqui:
+// o estoque atual do produto é atribuído às entradas mais recentes (as mais antigas saem primeiro).
+export function comSaldoEstimado(entradas, produtos) {
+  const lista = Array.isArray(entradas) ? entradas : [];
+  const estoque = new Map((Array.isArray(produtos) ? produtos : []).map((p) => [p.produto_id, quantidadeDe(p)]));
+  const instante = (e) => new Date(e.data_entrada).getTime() || 0;
+  const saldos = new Map();
+
+  const porProduto = new Map();
+  lista.forEach((e) => porProduto.set(e.id_produto, [...(porProduto.get(e.id_produto) ?? []), e]));
+  porProduto.forEach((entradasDoProduto, id) => {
+    let restante = estoque.get(id) ?? 0;
+    [...entradasDoProduto]
+      .sort((a, b) => instante(b) - instante(a) || b.entrada_id - a.entrada_id)
+      .forEach((e) => {
+        const saldo = Math.max(0, Math.min(Number(e.quantidade) || 0, restante));
+        saldos.set(e.entrada_id, saldo);
+        restante -= saldo;
+      });
+  });
+
+  return lista.map((e) => ({ ...e, saldo: saldos.get(e.entrada_id) ?? 0 }));
+}
+
+// 'vencido' | 'proximo' | 'normal' para lotes com saldo e validade; null nos demais.
+export function situacaoDoLote(entrada) {
+  if (!(Number(entrada?.saldo) > 0)) return null;
+  const dias = diasParaVencer(entrada.validade);
+  if (dias === null) return null;
+  if (dias < 0) return 'vencido';
+  return dias <= DIAS_ALERTA ? 'proximo' : 'normal';
+}
+
+// Lotes em estoque por produto: Map(id_produto -> lotes), da validade mais próxima para a mais distante.
+export function lotesPorProduto(entradas) {
+  const mapa = new Map();
+  (Array.isArray(entradas) ? entradas : []).forEach((e) => {
+    const situacao = situacaoDoLote(e);
+    if (!situacao) return;
+    const lote = { ...e, saldo: Number(e.saldo), dias: diasParaVencer(e.validade), situacao };
+    mapa.set(e.id_produto, [...(mapa.get(e.id_produto) ?? []), lote]);
+  });
+  mapa.forEach((lista) => lista.sort((a, b) => a.dias - b.dias));
+  return mapa;
+}
+
+// Situações de um produto. Vencido e próximo do vencimento nunca se misturam
+// (vencido tem prioridade) e vêm dos lotes que ainda estão em estoque.
+export function situacoesDe(produto, lotes = []) {
   const quantidade = quantidadeDe(produto);
   const minimo = Number(produto.estoque_minimo ?? 0);
-  const dias = diasParaVencer(produto.validade);
   const situacoes = [];
 
-  if (quantidade > 0 && dias !== null && dias < 0) situacoes.push('vencido');
-  else if (quantidade > 0 && dias !== null && dias <= DIAS_ALERTA) situacoes.push('proximo');
+  if (lotes.some((l) => l.situacao === 'vencido')) situacoes.push('vencido');
+  else if (lotes.some((l) => l.situacao === 'proximo')) situacoes.push('proximo');
   if (quantidade < minimo) situacoes.push('baixo');
   if (situacoes.length === 0) situacoes.push('normal');
   return situacoes;
 }
+
+// Texto curto para a validade de um lote: "vencido há 3 dias", "vence hoje", "vence em 5 dias".
+export function descreverPrazo(dias) {
+  if (dias === null || dias === undefined) return '';
+  if (dias < 0) return `vencido há ${-dias} ${dias === -1 ? 'dia' : 'dias'}`;
+  if (dias === 0) return 'vence hoje';
+  return `vence em ${dias} ${dias === 1 ? 'dia' : 'dias'}`;
+}
+
+// Remove acentos e maiúsculas para a pesquisa ("pao" encontra "Pão").
+export const normalizarBusca = (texto) =>
+  String(texto ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 
 export const ROTULO_SITUACAO = {
   vencido: 'Vencido',
@@ -78,9 +141,9 @@ export const ROTULO_SITUACAO = {
 
 export const TOM_SITUACAO = { vencido: 'erro', proximo: 'aviso', baixo: 'aviso', normal: 'ok' };
 
-export function contarSituacoes(produtos) {
+export function contarSituacoes(produtos, lotes = new Map()) {
   const total = { vencido: 0, proximo: 0, baixo: 0, normal: 0 };
-  produtos.forEach((p) => situacoesDe(p).forEach((s) => (total[s] += 1)));
+  produtos.forEach((p) => situacoesDe(p, lotes.get(p.produto_id)).forEach((s) => (total[s] += 1)));
   return total;
 }
 
