@@ -23,7 +23,7 @@ Padarias trabalham com muitos insumos, prazos de validade e consumo que varia ao
 - Node.js e Express 5
 - PostgreSQL (`pg`)
 - JWT (`jsonwebtoken`), `bcrypt` e `zod`
-- `pdfkit-table`, `node-cron` e `web-push`
+- `pdfkit-table`
 - API de IA compatível com OpenAI (Groq)
 
 **Frontend**
@@ -69,8 +69,6 @@ Copy-Item frontend\.env.example frontend\.env
 | `DB_URL` | URL de conexão com o PostgreSQL |
 | `JWT_SECRET` | Segredo usado para assinar os tokens JWT |
 | `AI_API_KEY`, `AI_API_URL`, `AI_MODEL`, `AI_TIMEOUT_MS` | Configuração da API de IA do balanço |
-| `DIAS_ALERTA_VALIDADE` | Dias de antecedência para o alerta de validade |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Chaves das notificações push |
 
 **Frontend (`frontend/.env`)**
 
@@ -78,7 +76,6 @@ Copy-Item frontend\.env.example frontend\.env
 | --- | --- |
 | `VITE_API_URL` | URL base da API (em desenvolvimento, `/backend`, repassado pelo proxy do Vite) |
 | `VITE_PROXY_TARGET` | Endereço do Express usado pelo proxy em desenvolvimento |
-| `VITE_DIAS_ALERTA_VALIDADE` | Mesmo valor de `DIAS_ALERTA_VALIDADE` do backend |
 
 Os arquivos `.env` nunca devem ser enviados ao GitHub.
 
@@ -104,12 +101,6 @@ cd frontend
 npm run dev
 ```
 
-O Vite mostra no terminal o endereço para abrir o frontend no navegador.
-
-## Testes
-
-Ainda não há testes automatizados.
-
 ## Estrutura de pastas
 
 ```text
@@ -120,7 +111,6 @@ webExemption/
 │   └── src/
 │       ├── config/
 │       ├── controllers/
-│       ├── jobs/
 │       ├── libs/
 │       ├── middlewares/
 │       ├── models/

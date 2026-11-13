@@ -163,7 +163,7 @@ export default function Entradas() {
             hint={
               validadeVencida
                 ? 'Atenção: esta data já passou.'
-                : 'Deixe em branco só se o item não tem prazo de validade.'
+                : ''
             }
           />
         </div>
@@ -171,7 +171,7 @@ export default function Entradas() {
           label="Fornecedor"
           value={fornecedor}
           onChange={(e) => setFornecedor(e.target.value)}
-          hint="Opcional. A data da entrada é registrada automaticamente."
+   
         />
 
         <Button type="submit" icon={PackagePlus} loading={executando}>

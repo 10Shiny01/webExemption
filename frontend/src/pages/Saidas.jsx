@@ -123,7 +123,6 @@ export default function Saidas() {
           as="textarea"
           value={observacao}
           onChange={(e) => setObservacao(e.target.value)}
-          hint="Opcional. A data da saída é registrada automaticamente."
         />
         <Button type="submit" icon={PackageMinus} loading={executando}>
           Registrar saída
